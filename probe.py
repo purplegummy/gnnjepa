@@ -41,7 +41,7 @@ def probe():
     optimizer = torch.optim.Adam(probe.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
 
-    dataset = EpidemiologyDataset('data/epidemiology_data.pt')
+    dataset = EpidemiologyDataset('data/probe_data.pt')
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_set, val_set = random_split(dataset, [train_size, val_size])
@@ -57,13 +57,11 @@ def probe():
             batch_loss = torch.tensor(0.0, device=device)
 
             for sample in batch:
-                graph_t = sample['graph_t'].to(device)
+                graph_t = sample['graph'].to(device)
+                labels = sample['labels'].to(device)
 
                 with torch.no_grad():
-                    z = model.encoder(graph_t.x, graph_t.edge_index)  # [num_nodes, 32]
-
-                # Ground truth SIR: argmax of first 3 features
-                labels = graph_t.x[:, :3].argmax(dim=1)  # [num_nodes]
+                    z = model.encoder(graph_t.x, graph_t.edge_index)
 
                 logits = probe(z)
                 batch_loss = batch_loss + criterion(logits, labels)
@@ -86,9 +84,9 @@ def probe():
         with torch.no_grad():
             for batch in val_loader:
                 for sample in batch:
-                    graph_t = sample['graph_t'].to(device)
+                    graph_t = sample['graph'].to(device)
+                    labels = sample['labels'].to(device)
                     z = model.encoder(graph_t.x, graph_t.edge_index)
-                    labels = graph_t.x[:, :3].argmax(dim=1)
                     preds = probe(z).argmax(dim=1)
                     val_correct += (preds == labels).sum().item()
                     val_nodes += labels.shape[0]
