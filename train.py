@@ -38,8 +38,8 @@ def train():
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    encoder = Encoder(in_dim=3, hidden_dim=64, out_dim=32)
-    predictor = Predictor(in_dim=33, hidden_dim=64, out_dim=32)
+    encoder = Encoder(in_dim=7, hidden_dim=64, out_dim=32)
+    predictor = Predictor(in_dim=35, hidden_dim=64, out_dim=32)
     model = JEPA(encoder, predictor, ema_decay=ema_decay).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -56,7 +56,7 @@ def train():
             for sample in batch:
                 graph_t = sample['graph_t'].to(device)
                 graph_t1 = sample['graph_t1'].to(device)
-                action = sample['action'].float().unsqueeze(-1).to(device)
+                action = sample['action'].to(device)  # [num_nodes, 3]
 
                 pred_z, target_z = model(graph_t, action, graph_t1)
                 # L2 normalize before MSE to prevent collapse
@@ -85,7 +85,7 @@ def train():
                 for sample in batch:
                     graph_t = sample['graph_t'].to(device)
                     graph_t1 = sample['graph_t1'].to(device)
-                    action = sample['action'].float().unsqueeze(-1).to(device)
+                    action = sample['action'].to(device)  # [num_nodes, 3]
 
                     pred_z, target_z = model(graph_t, action, graph_t1)
                     pred_z_n = nn.functional.normalize(pred_z, dim=-1)
