@@ -28,7 +28,7 @@ def train():
     lr = 1e-3
     epochs = 50
     batch_size = 32
-    ema_decay = 0.99
+    ema_decay = 0.996
 
     dataset = EpidemiologyDataset('data/epidemiology_data.pt')
     train_size = int(0.8 * len(dataset))
@@ -59,7 +59,10 @@ def train():
                 action = sample['action'].float().unsqueeze(-1).to(device)
 
                 pred_z, target_z = model(graph_t, action, graph_t1)
-                batch_loss = batch_loss + mse(pred_z, target_z)
+                # L2 normalize before MSE to prevent collapse
+                pred_z_n = nn.functional.normalize(pred_z, dim=-1)
+                target_z_n = nn.functional.normalize(target_z, dim=-1)
+                batch_loss = batch_loss + mse(pred_z_n, target_z_n)
 
             batch_loss = batch_loss / len(batch)
             batch_loss.backward()
@@ -80,7 +83,9 @@ def train():
                     action = sample['action'].float().unsqueeze(-1).to(device)
 
                     pred_z, target_z = model(graph_t, action, graph_t1)
-                    batch_val = batch_val + mse(pred_z, target_z)
+                    pred_z_n = nn.functional.normalize(pred_z, dim=-1)
+                    target_z_n = nn.functional.normalize(target_z, dim=-1)
+                    batch_val = batch_val + mse(pred_z_n, target_z_n)
 
                 val_loss += (batch_val / len(batch)).item()
 
