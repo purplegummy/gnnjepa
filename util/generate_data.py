@@ -42,12 +42,13 @@ def init_sir(num_nodes, initial_infected_frac=0.05):
 
 
 def sir_step(status, edge_index, region_features, action,
-             base_beta=0.4, base_gamma=0.05):
+             base_beta=0.15, base_gamma=0.05, waning_rate=0.01):
     """
-    One step of heterogeneous SIR with action effects:
+    One step of heterogeneous SIRS with action effects:
       - vaccinate:          susceptible nodes move to recovered (applied before step)
       - increase hospitals: boosts gamma by 50% for targeted nodes
       - lockdown:           reduces beta by 50% for targeted nodes
+    Recovered nodes wane back to susceptible at waning_rate (SIRS dynamics).
     """
     num_nodes = status.shape[0]
     density  = region_features[:, 2]
@@ -59,8 +60,8 @@ def sir_step(status, edge_index, region_features, action,
     # Action effects
     lockdown_mask   = action[:, 2].bool()
     hosp_boost_mask = action[:, 1].bool()
-    beta[lockdown_mask]        *= 0.5
-    gamma[hosp_boost_mask]     *= 1.5
+    beta[lockdown_mask]    *= 0.5
+    gamma[hosp_boost_mask] *= 1.5
 
     new_status = status.clone()
     src, dst = edge_index[0], edge_index[1]
@@ -75,6 +76,9 @@ def sir_step(status, edge_index, region_features, action,
         elif status[node] == 1:  # Infected
             if random.random() < gamma[node].item():
                 new_status[node] = 2
+        elif status[node] == 2:  # Recovered — immunity waning
+            if random.random() < waning_rate:
+                new_status[node] = 0
 
     return new_status
 
