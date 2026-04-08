@@ -1,6 +1,6 @@
 import random
 import torch
-from util.generate_data import build_graph, generate_region_features, status_to_onehot, make_pyg_snapshot, sir_step
+from generate_data import build_graph, generate_region_features, status_to_onehot, make_pyg_snapshot, sir_step
 from torch_geometric.utils import from_networkx
 
 
