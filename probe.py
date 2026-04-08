@@ -81,6 +81,8 @@ def probe():
 
         probe.eval()
         val_correct = val_nodes = 0
+        class_correct = torch.zeros(3)
+        class_total = torch.zeros(3)
         with torch.no_grad():
             for batch in val_loader:
                 for sample in batch:
@@ -90,9 +92,15 @@ def probe():
                     preds = probe(z).argmax(dim=1)
                     val_correct += (preds == labels).sum().item()
                     val_nodes += labels.shape[0]
+                    for c in range(3):
+                        mask = labels == c
+                        class_correct[c] += (preds[mask] == c).sum().item()
+                        class_total[c] += mask.sum().item()
 
         val_acc = val_correct / val_nodes
-        print(f"Epoch {epoch+1}/20  train_acc={train_acc:.4f}  val_acc={val_acc:.4f}")
+        per_class = class_correct / class_total.clamp(min=1)
+        print(f"Epoch {epoch+1}/20  train_acc={train_acc:.4f}  val_acc={val_acc:.4f}"
+              f"  S={per_class[0]:.3f}  I={per_class[1]:.3f}  R={per_class[2]:.3f}")
 
 
 if __name__ == '__main__':
