@@ -36,17 +36,23 @@ def probe():
         p.requires_grad = False
     model.eval()
 
-    # Linear probe: embedding -> SIR class (3-way per node)
-    probe = nn.Linear(32, 3).to(device)
-    optimizer = torch.optim.Adam(probe.parameters(), lr=1e-3)
-    criterion = nn.CrossEntropyLoss()
-
     dataset = EpidemiologyDataset('data/probe_data.pt')
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_set, val_set = random_split(dataset, [train_size, val_size])
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_set, batch_size=32, shuffle=False, collate_fn=collate_fn)
+
+    # Compute class weights from training data to handle imbalance
+    all_labels = torch.cat([sample['labels'] for sample in train_set])
+    class_counts = torch.bincount(all_labels, minlength=3).float()
+    class_weights = (1.0 / class_counts.clamp(min=1)).to(device)
+    class_weights = class_weights / class_weights.sum()
+
+    # Linear probe: embedding -> SIR class (3-way per node)
+    probe = nn.Linear(32, 3).to(device)
+    optimizer = torch.optim.Adam(probe.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
 
     for epoch in range(20):
         probe.train()
