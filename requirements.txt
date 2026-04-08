@@ -1,0 +1,6 @@
+torch
+torch_geometric
+ndlib
+networkx
+numpy
+six
