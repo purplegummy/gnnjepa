@@ -126,7 +126,7 @@ def make_pyg_snapshot(G, sir_onehot, region_features):
 
 
 def generate_epidemiology_data(num_nodes=100, num_steps=1000,
-                               base_beta=0.4, base_gamma=0.05,
+                               base_beta=0.15, base_gamma=0.05,
                                action_prob=0.3, vacc_rate=0.1,
                                intervention_rate=0.1):
     """
@@ -149,6 +149,14 @@ def generate_epidemiology_data(num_nodes=100, num_steps=1000,
 
         next_status = sir_step(status, edge_index, region_features, action, base_beta, base_gamma)
         status = next_status
+
+        # Reseed if epidemic dies out — simulates new outbreak arriving from outside
+        if (status == 1).sum() == 0:
+            susceptible = (status == 0).nonzero(as_tuple=True)[0].tolist()
+            if len(susceptible) > 0:
+                seeds = random.sample(susceptible, min(3, len(susceptible)))
+                for n in seeds:
+                    status[n] = 1
 
         sir_onehot_next = status_to_onehot(status, num_nodes)
         graph_t1 = make_pyg_snapshot(G, sir_onehot_next, region_features)
