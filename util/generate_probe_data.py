@@ -5,7 +5,7 @@ from torch_geometric.utils import from_networkx
 
 
 def generate_probe_data(num_nodes=100, num_steps=1000,
-                        base_beta=0.3, base_gamma=0.1, waning_rate=0.05):
+                        base_beta=0.1, base_gamma=0.1, waning_rate=0.2):
     """
     Generates data with more balanced S/I/R distribution for linear probing.
     Higher beta, gamma, and waning rate keeps all three states active.
