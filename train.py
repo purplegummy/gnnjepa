@@ -28,7 +28,7 @@ def train():
     lr = 1e-3
     epochs = 50
     batch_size = 32
-    ema_decay = 0.996
+    ema_decay = 0.99
 
     dataset = EpidemiologyDataset('data/epidemiology_data.pt')
     train_size = int(0.8 * len(dataset))
@@ -62,6 +62,7 @@ def train():
                 # L2 normalize before MSE to prevent collapse
                 pred_z_n = nn.functional.normalize(pred_z, dim=-1)
                 target_z_n = nn.functional.normalize(target_z, dim=-1)
+                
                 batch_loss = batch_loss + mse(pred_z_n, target_z_n)
 
             batch_loss = batch_loss / len(batch)
@@ -71,7 +72,11 @@ def train():
             total_loss += batch_loss.item()
 
         avg_train = total_loss / len(train_loader)
-
+        # Check for collapse: compute variance of embeddings
+        pred_var = torch.var(pred_z, dim=0).mean().item()
+        target_var = torch.var(target_z, dim=0).mean().item()
+        if epoch == 0 or (epoch + 1) % 10 == 0:  # Log every 10 epochs or first
+            print(f"  Pred var: {pred_var:.6f}, Target var: {target_var:.6f}")
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
@@ -85,6 +90,11 @@ def train():
                     pred_z, target_z = model(graph_t, action, graph_t1)
                     pred_z_n = nn.functional.normalize(pred_z, dim=-1)
                     target_z_n = nn.functional.normalize(target_z, dim=-1)
+                    # Check for collapse: compute variance of embeddings
+                    pred_var = torch.var(pred_z, dim=0).mean().item()
+                    target_var = torch.var(target_z, dim=0).mean().item()
+                    if epoch == 0 or (epoch + 1) % 10 == 0:  # Log every 10 epochs or first
+                        print(f"  Val Pred var: {pred_var:.6f}, Val Target var: {target_var:.6f}")
                     batch_val = batch_val + mse(pred_z_n, target_z_n)
 
                 val_loss += (batch_val / len(batch)).item()
