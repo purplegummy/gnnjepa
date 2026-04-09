@@ -3,7 +3,7 @@ from torch_geometric.nn import GCNConv
 
 
 class Encoder(nn.Module):
-    def __init__(self, in_dim=7, hidden_dim=64, out_dim=32):
+    def __init__(self, in_dim=3, hidden_dim=64, out_dim=32):
         super().__init__()
         # each node has 7 features: [S, I, R] one-hot + [population, hosp_capacity, density, elderly_frac]
         # sum neighbor features, add self features, then linear transformation

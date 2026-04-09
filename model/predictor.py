@@ -4,7 +4,7 @@ from torch_geometric.nn import GCNConv
 
 
 class Predictor(nn.Module):
-    def __init__(self, in_dim=33, hidden_dim=64, out_dim=32):
+    def __init__(self, in_dim=36, hidden_dim=64, out_dim=32):
         super().__init__()
         self.conv1 = GCNConv(in_dim, hidden_dim)
         self.conv2 = GCNConv(hidden_dim, out_dim)
