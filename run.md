@@ -32,3 +32,6 @@ python train.py
 ## Data
 
 A single SIR epidemic time series on a fixed Erdos-Renyi contact graph. Each transition is `(graph_t, action, graph_t+1)` where action is a per-node binary vaccination mask.
+
+Epoch 50/50  train_mse=0.4608  val_mse=0.4619  R²: cases=0.430  deaths=0.410  stringency=0.731
+Epoch 50/50  train_mse=0.5601  val_mse=0.5632  R²: cases=-0.083  deaths=0.582  stringency=0.756
