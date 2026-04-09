@@ -35,3 +35,7 @@ A single SIR epidemic time series on a fixed Erdos-Renyi contact graph. Each tra
 
 Epoch 50/50  train_mse=0.4608  val_mse=0.4619  R²: cases=0.430  deaths=0.410  stringency=0.731
 Epoch 50/50  train_mse=0.5601  val_mse=0.5632  R²: cases=-0.083  deaths=0.582  stringency=0.756
+
+
+LINEAR ONLY: Epoch 50/50  train_mse=0.8359  val_mse=0.9939  R²: cases=-0.516  deaths=0.677  stringency=0.081
+ENCODER+LINEAR: Epoch 50/50  train_mse=0.5104  val_mse=0.5148  R²: cases=0.505  deaths=0.359  stringency=0.673
