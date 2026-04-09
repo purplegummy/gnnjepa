@@ -54,7 +54,7 @@ def probe():
     optimizer = torch.optim.Adam(probe_head.parameters(), lr=1e-3)
     criterion = nn.MSELoss()
 
-    for epoch in range(20):
+    for epoch in range(50):
         probe_head.train()
         total_loss = 0.0
 
@@ -69,7 +69,7 @@ def probe():
                     z = model.encoder(x, edge_index)  # [N, 32]
 
                 pred = probe_head(z)  # [N, 3]
-                batch_loss = batch_loss + criterion(pred, x)  # predict current features
+                batch_loss = batch_loss + criterion(pred, snap.y.to(device))
 
             batch_loss = batch_loss / len(batch)
             batch_loss.backward()
@@ -88,7 +88,7 @@ def probe():
                     z = model.encoder(x, edge_index)
                     pred = probe_head(z)
                     all_preds.append(pred)
-                    all_targets.append(x)  # predict current features
+                    all_targets.append(snap.y.to(device))
 
         all_preds   = torch.cat(all_preds,   dim=0)  # [total_nodes, 3]
         all_targets = torch.cat(all_targets, dim=0)
@@ -97,15 +97,15 @@ def probe():
         # Per-output R²: [daily_cases, daily_deaths, stringency]
         r2 = [r2_score(all_preds[:, i], all_targets[:, i]).item() for i in range(3)]
 
-        print(f"Epoch {epoch+1}/20  train_mse={avg_train_loss:.4f}  val_mse={val_mse:.4f}"
+        print(f"Epoch {epoch+1}/50  train_mse={avg_train_loss:.4f}  val_mse={val_mse:.4f}"
               f"  R²: cases={r2[0]:.3f}  deaths={r2[1]:.3f}  stringency={r2[2]:.3f}")
 
-    # Baseline: linear model on raw features (no GNN)
-    print("\n--- Baseline: Linear(3→3) on raw features ---")
+    # Baseline: Linear(3→3) on raw x predicting y — no graph, no encoder
+    print("\n--- Baseline: Linear(3→3) on raw features predicting y ---")
     baseline = nn.Linear(3, 3).to(device)
     baseline_opt = torch.optim.Adam(baseline.parameters(), lr=1e-3)
 
-    for epoch in range(20):
+    for epoch in range(50):
         baseline.train()
         total_loss = 0.0
         for batch in train_loader:
@@ -114,7 +114,7 @@ def probe():
             for snap in batch:
                 x = snap.x.to(device)
                 pred = baseline(x)
-                batch_loss = batch_loss + criterion(pred, x)
+                batch_loss = batch_loss + criterion(pred, snap.y.to(device))
             batch_loss = batch_loss / len(batch)
             batch_loss.backward()
             baseline_opt.step()
@@ -129,13 +129,13 @@ def probe():
                 for snap in batch:
                     x = snap.x.to(device)
                     all_preds.append(baseline(x))
-                    all_targets.append(x)
+                    all_targets.append(snap.y.to(device))
 
         all_preds   = torch.cat(all_preds,   dim=0)
         all_targets = torch.cat(all_targets, dim=0)
         val_mse = criterion(all_preds, all_targets).item()
         r2 = [r2_score(all_preds[:, i], all_targets[:, i]).item() for i in range(3)]
-        print(f"Epoch {epoch+1}/20  train_mse={avg_train_loss:.4f}  val_mse={val_mse:.4f}"
+        print(f"Epoch {epoch+1}/50  train_mse={avg_train_loss:.4f}  val_mse={val_mse:.4f}"
               f"  R²: cases={r2[0]:.3f}  deaths={r2[1]:.3f}  stringency={r2[2]:.3f}")
 
 
