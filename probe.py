@@ -32,8 +32,8 @@ def probe():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load pretrained JEPA with updated dims
-    encoder = Encoder(in_dim=3, hidden_dim=64, out_dim=32)
-    predictor = Predictor(in_dim=36, hidden_dim=64, out_dim=32)
+    encoder = Encoder(in_dim=3, hidden_dim=32, out_dim=16)
+    predictor = Predictor(in_dim=20, hidden_dim=32, out_dim=16)
     model = JEPA(encoder, predictor).to(device)
     model.load_state_dict(torch.load('model_weights.pt', map_location=device))
 
@@ -51,7 +51,7 @@ def probe():
     val_loader = DataLoader(val_set, batch_size=32, shuffle=False, collate_fn=collate_fn)
 
     # Linear probe: embedding -> next-week node features [daily_cases, daily_deaths, stringency]
-    probe_head = nn.Linear(32, 3).to(device)
+    probe_head = nn.Linear(16, 3).to(device)
     optimizer = torch.optim.Adam(probe_head.parameters(), lr=1e-3)
     criterion = nn.MSELoss()
 
