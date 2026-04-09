@@ -45,7 +45,8 @@ def probe():
     dataset = CovidGraphDataset('data/covid_graphs.pt')
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
-    train_set, val_set = random_split(dataset, [train_size, val_size])
+    train_set, val_set = random_split(dataset, [train_size, val_size],
+                                      generator=torch.Generator().manual_seed(42))
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True, collate_fn=collate_fn)
     val_loader = DataLoader(val_set, batch_size=32, shuffle=False, collate_fn=collate_fn)
 
@@ -54,6 +55,7 @@ def probe():
     optimizer = torch.optim.Adam(probe_head.parameters(), lr=1e-3)
     criterion = nn.MSELoss()
 
+    print("--- GNN Probe: Linear(32→3) on encoder embeddings predicting y ---")
     for epoch in range(50):
         probe_head.train()
         total_loss = 0.0

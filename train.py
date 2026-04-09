@@ -44,9 +44,9 @@ def train():
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     # in_dim=3  (daily_cases, daily_deaths, stringency)
-    # predictor in_dim = out_dim(encoder) + action_dim = 32 + 4 = 36
-    encoder = Encoder(in_dim=3, hidden_dim=64, out_dim=32)
-    predictor = Predictor(in_dim=36, hidden_dim=64, out_dim=32)
+    # predictor in_dim = out_dim(encoder) + action_dim = 16 + 4 = 20
+    encoder = Encoder(in_dim=3, hidden_dim=32, out_dim=16)
+    predictor = Predictor(in_dim=20, hidden_dim=32, out_dim=16)
     model = JEPA(encoder, predictor, ema_decay=ema_decay).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
