@@ -65,13 +65,11 @@ def probe():
             for snap in batch:
                 x = snap.x.to(device)
                 edge_index = snap.edge_index.to(device)
-                target = snap.y.to(device)  # [N, 3]
-
                 with torch.no_grad():
                     z = model.encoder(x, edge_index)  # [N, 32]
 
                 pred = probe_head(z)  # [N, 3]
-                batch_loss = batch_loss + criterion(pred, target)
+                batch_loss = batch_loss + criterion(pred, x)  # predict current features
 
             batch_loss = batch_loss / len(batch)
             batch_loss.backward()
@@ -87,11 +85,10 @@ def probe():
                 for snap in batch:
                     x = snap.x.to(device)
                     edge_index = snap.edge_index.to(device)
-                    target = snap.y.to(device)
                     z = model.encoder(x, edge_index)
                     pred = probe_head(z)
                     all_preds.append(pred)
-                    all_targets.append(target)
+                    all_targets.append(x)  # predict current features
 
         all_preds   = torch.cat(all_preds,   dim=0)  # [total_nodes, 3]
         all_targets = torch.cat(all_targets, dim=0)

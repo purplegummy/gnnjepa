@@ -294,9 +294,23 @@ def build_snapshots(weekly: pd.DataFrame):
     return snapshots
 
 
+def normalize_snapshots(snapshots):
+    """Standardize x and y across all snapshots; save mean/std for inverse transform."""
+    all_x = torch.cat([s.x for s in snapshots], dim=0)  # [total_nodes, 3]
+    mean = all_x.mean(dim=0)
+    std  = all_x.std(dim=0).clamp(min=1e-8)
+
+    for s in snapshots:
+        s.x = (s.x - mean) / std
+        s.y = (s.y - mean) / std  # normalize target with same stats
+
+    return snapshots, mean, std
+
+
 def main():
     csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "OxCGRT_simplified_v1.csv")
-    out_path = os.path.join(os.path.dirname(__file__), "..", "data", "covid_graphs.pt")
+    out_path  = os.path.join(os.path.dirname(__file__), "..", "data", "covid_graphs.pt")
+    stats_path = os.path.join(os.path.dirname(__file__), "..", "data", "covid_norm_stats.pt")
 
     print("Loading data …")
     df = load_and_clean(csv_path)
@@ -313,18 +327,24 @@ def main():
     snapshots = build_snapshots(weekly)
     print(f"  {len(snapshots)} snapshots")
 
+    print("Normalizing node features …")
+    snapshots, mean, std = normalize_snapshots(snapshots)
+    torch.save({"mean": mean, "std": std}, stats_path)
+    print(f"  mean={mean.tolist()}  std={std.tolist()}")
+
     if snapshots:
         s = snapshots[0]
         n_edges = s.edge_index.shape[1] // 2
         print(f"\nExample snapshot (week {s.week}):")
         print(f"  nodes      : {s.num_nodes} countries")
         print(f"  edges      : {n_edges} border pairs ({s.edge_index.shape[1]} directed)")
-        print(f"  x shape    : {s.x.shape}  — [daily_cases, daily_deaths, stringency]")
+        print(f"  x shape    : {s.x.shape}  — [daily_cases, daily_deaths, stringency] (normalized)")
         print(f"  action     : {s.action.shape}  — [C1, C2, C6, H6]")
-        print(f"  y shape    : {s.y.shape}  — target node features at t+1")
+        print(f"  y shape    : {s.y.shape}  — target node features at t+1 (normalized)")
 
     torch.save(snapshots, out_path)
     print(f"\nSaved {len(snapshots)} snapshots → {out_path}")
+    print(f"Saved norm stats     → {stats_path}")
 
 
 if __name__ == "__main__":
